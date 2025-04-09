@@ -39,3 +39,8 @@ void    ft_free_split(char **split)
     }
     free(split);
 }
+
+char    **split_command(char *cmd)
+{
+    return (ft_split(cmd, ' '));
+}
