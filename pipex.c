@@ -44,3 +44,19 @@ char    **split_command(char *cmd)
 {
     return (ft_split(cmd, ' '));
 }
+
+char    *get_env_value(char *var, char **envp)
+{
+    size_t var_len;
+
+    if (!var || !envp)
+        return (NULL);
+    var_len = ft_strlen(var);
+    while (*envp)
+    {
+        if (ft_strncmp(*envp, var, var_len) == 0 && (*envp)[var_len] == '=')
+            return (&(*envp)[var_len + 1]);
+        envp++;
+    }
+    return (NULL);
+}
