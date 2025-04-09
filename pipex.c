@@ -142,3 +142,132 @@ int handle_here_doc(char *limiter, int *in_fd)
     }
     return (0);
 }
+
+int main(int argc, char **argv, char **envp)
+{
+    int in_fd;
+    int out_fd;
+    int here_doc = 0;
+    int num_cmds;
+    pid_t *child_pids;
+    int i;
+
+    if (argc < 5)
+    {
+        ft_putstr_fd("Error: too few arguments\n", STDERR_FILENO);
+        exit(1);
+    }
+    if (ft_strcmp(argv[1], "here_doc") == 0)
+    {
+        here_doc = 1;
+        if (argc < 6)
+        {
+            ft_putstr_fd("Error: here_doc requires at least 4 arguments\n", STDERR_FILENO);
+            exit(1);
+        }
+        if (handle_here_doc(argv[2], &in_fd) == -1)
+        {
+            perror("pipex");
+            exit(1);
+        }
+        out_fd = open(argv[argc - 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
+        num_cmds = argc - 4;
+    }
+    else
+    {
+        in_fd = open(argv[1], O_RDONLY);
+        if (in_fd == -1)
+        {
+            perror("pipex");
+            exit(1);
+        }
+        out_fd = open(argv[argc - 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (out_fd == -1)
+        {
+            perror("pipex");
+            exit(1);
+        }
+        num_cmds = argc - 3;
+    }
+    child_pids = malloc(num_cmds * sizeof(pid_t));
+    if (!child_pids)
+    {
+        perror("pipex");
+        exit(1);
+    }
+    int prev_pipe_read = in_fd;
+    for (i = 0; i < num_cmds; i++)
+    {
+        int pipefd[2];
+        if (i < num_cmds - 1 && pipe(pipefd) == -1)
+        {
+            perror("pipex");
+            exit(1);
+        }
+        child_pids[i] = fork();
+        if (child_pids[i] == -1)
+        {
+            perror("pipex");
+            exit(1);
+        }
+        if (child_pids[i] == 0)
+        {
+            dup2(prev_pipe_read, STDIN_FILENO);
+            close(prev_pipe_read);
+            if (i == num_cmds - 1)
+            {
+                dup2(out_fd, STDOUT_FILENO);
+                close(out_fd);
+            }
+            else
+            {
+                dup2(pipefd[WRITE_END], STDOUT_FILENO);
+                close(pipefd[WRITE_END]);
+                close(pipefd[READ_END]);
+            }
+            char **cmd_args = split_command(argv[i + 2 + here_doc * 2]);
+            if (!cmd_args || !cmd_args[0])
+            {
+                ft_putstr_fd("pipex: command not found\n", STDERR_FILENO);
+                exit(127);
+            }
+            char *path = get_cmd_path(cmd_args[0], envp);
+            if (!path)
+            {
+                ft_putstr_fd("pipex: command not found: ", STDERR_FILENO);
+                ft_putstr_fd(cmd_args[0], STDERR_FILENO);
+                ft_putstr_fd("\n", STDERR_FILENO);
+                ft_free_split(cmd_args);
+                exit(127);
+            }
+            execve(path, cmd_args, envp);
+            perror("pipex");
+            free(path);
+            ft_free_split(cmd_args);
+            exit(126);
+        }
+        else
+        {
+            if (i < num_cmds - 1)
+            {
+                close(pipefd[WRITE_END]);
+                if (prev_pipe_read != in_fd)
+                    close(prev_pipe_read);
+                prev_pipe_read = pipefd[READ_END];
+            }
+        }
+    }
+    close(prev_pipe_read);
+    close(out_fd);
+    close(in_fd);
+    int status;
+    int exit_status = 0;
+    for (i = 0; i < num_cmds; i++)
+    {
+        waitpid(child_pids[i], &status, 0);
+        if (i == num_cmds - 1)
+            exit_status = WEXITSTATUS(status);
+    }
+    free(child_pids);
+    return (exit_status);
+}
