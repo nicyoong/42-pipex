@@ -24,3 +24,18 @@ int ft_strcmp(const char *s1, const char *s2)
         i++;
     return ((unsigned char)s1[i] - (unsigned char)s2[i]);
 }
+
+void    ft_free_split(char **split)
+{
+    int i;
+
+    if (!split)
+        return;
+    i = 0;
+    while (split[i])
+    {
+        free(split[i]);
+        i++;
+    }
+    free(split);
+}
