@@ -60,3 +60,43 @@ char    *get_env_value(char *var, char **envp)
     }
     return (NULL);
 }
+
+char    *get_cmd_path(char *cmd, char **envp)
+{
+    char    *path_env;
+    char    **dirs;
+    char    *full_path;
+    int     i;
+
+    if (ft_strchr(cmd, '/') != NULL)
+    {
+        if (access(cmd, X_OK) == 0)
+            return (ft_strdup(cmd));
+        return (NULL);
+    }
+    path_env = get_env_value("PATH", envp);
+    if (!path_env)
+        return (NULL);
+    dirs = ft_split(path_env, ':');
+    if (!dirs)
+        return (NULL);
+    i = 0;
+    while (dirs[i])
+    {
+        full_path = ft_strjoin3(dirs[i], "/", cmd);
+        if (!full_path)
+        {
+            ft_free_split(dirs);
+            return (NULL);
+        }
+        if (access(full_path, X_OK) == 0)
+        {
+            ft_free_split(dirs);
+            return (full_path);
+        }
+        free(full_path);
+        i++;
+    }
+    ft_free_split(dirs);
+    return (NULL);
+}
