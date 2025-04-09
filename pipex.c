@@ -100,3 +100,45 @@ char    *get_cmd_path(char *cmd, char **envp)
     ft_free_split(dirs);
     return (NULL);
 }
+
+int handle_here_doc(char *limiter, int *in_fd)
+{
+    int pipefd[2];
+    pid_t pid;
+
+    if (pipe(pipefd) == -1)
+        return (-1);
+    pid = fork();
+    if (pid == -1)
+        return (-1);
+    if (pid == 0)
+    {
+        char *line;
+        size_t limiter_len = ft_strlen(limiter);
+        close(pipefd[READ_END]);
+        while (1)
+        {
+            ft_putstr_fd("heredoc> ", STDOUT_FILENO);
+            line = get_next_line(STDIN_FILENO);
+            if (!line)
+                break;
+            if (ft_strncmp(line, limiter, limiter_len) == 0
+                && (line[limiter_len] == '\n' || line[limiter_len] == '\0'))
+            {
+                free(line);
+                break;
+            }
+            write(pipefd[WRITE_END], line, ft_strlen(line));
+            free(line);
+        }
+        close(pipefd[WRITE_END]);
+        exit(0);
+    }
+    else
+    {
+        close(pipefd[WRITE_END]);
+        waitpid(pid, NULL, 0);
+        *in_fd = pipefd[READ_END];
+    }
+    return (0);
+}
