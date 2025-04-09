@@ -1,0 +1,50 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    bigfile.txt                                        :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: nyoong <nyoong@student.42.fr>              +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2023/01/01 00:00:42 by cadet             #+#    #+#              #
+#    Updated: 2025/04/09 18:25:20 by nyoong           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int	main(void)
+{
+	int		days_at_42;
+	char	*buffer;
+
+	days_at_42 = 0;
+	buffer = malloc(42 * sizeof(char));
+	if (!buffer)
+		return (1);
+	while (days_at_42 < 42)
+	{
+		sprintf(buffer, "Day %d: ", days_at_42);
+		write(1, buffer, ft_strlen(buffer));
+		if (days_at_42 == 0)
+			write(1, "Started piscine!\n", 17);
+		else if (days_at_42 == 7)
+			write(1, "First evaluation\n", 17);
+		else if (days_at_42 == 21)
+			write(1, "Mid-piscine crisis\n", 19);
+		else if (days_at_42 == 41)
+			write(1, "Final rush!\n", 12);
+		else
+			write(1, "Coding all day\n", 15);
+		days_at_42++;
+	}
+	free(buffer);
+	return (0);
+}
+
+/* Typical 42 errors included: */
+// 1. Missing parenthesis in malloc line
+// 2. Extra parenthesis in sizeof
+// 3. ft_strlen used but not declared
+// 4. No include for ft_strlen
